@@ -1,0 +1,94 @@
+XBE_TITLE = VVVVVV
+GEN_XISO = $(XBE_TITLE).iso
+
+CXXFLAGS=-I$(CURDIR)/src \
+         -I$(CURDIR)/tinyxml \
+         -I$(CURDIR)/physfs \
+         -I$(CURDIR)/lodepng \
+         -Wall
+
+CFLAGS=-DPHYSFS_NO_CDROM_SUPPORT=1 \
+       -DPHYSFS_SUPPORTS_ZIP=1 \
+       -DPHYSFS_SUPPORTS_7Z=0 \
+       -DPHYSFS_SUPPORTS_GRP=0 \
+       -DPHYSFS_SUPPORTS_HOG=0 \
+       -DPHYSFS_SUPPORTS_MVL=0 \
+       -DPHYSFS_SUPPORTS_WAD=0 \
+       -DPHYSFS_SUPPORTS_QPAK=0 \
+       -DPHYSFS_SUPPORTS_SLB=0 \
+       -DPHYSFS_SUPPORTS_ISO9660=0 \
+       -DPHYSFS_SUPPORTS_VDF=0 \
+       -Wall
+
+# Source Lists
+VVV_SRC=\
+	src/BinaryBlob.cpp \
+	src/BlockV.cpp \
+	src/editor.cpp \
+	src/Ent.cpp \
+	src/Entity.cpp \
+	src/FileSystemUtils.cpp \
+	src/Finalclass.cpp \
+	src/Game.cpp \
+	src/Graphics.cpp \
+	src/GraphicsResources.cpp \
+	src/GraphicsUtil.cpp \
+	src/Input.cpp \
+	src/KeyPoll.cpp \
+	src/Labclass.cpp \
+	src/Logic.cpp \
+	src/Map.cpp \
+	src/Music.cpp \
+	src/Otherlevel.cpp \
+	src/preloader.cpp \
+	src/Screen.cpp \
+	src/Script.cpp \
+	src/Scripts.cpp \
+	src/SoundSystem.cpp \
+	src/Spacestation2.cpp \
+	src/TerminalScripts.cpp \
+	src/Textbox.cpp \
+	src/titlerender.cpp \
+	src/Tower.cpp \
+	src/UtilityClass.cpp \
+	src/WarpClass.cpp \
+	src/main.cpp \
+	src/Network.c \
+	src/SteamNetwork.c \
+	src/GOGNetwork.c
+
+XML_SRC=\
+	tinyxml/tinystr.cpp \
+	tinyxml/tinyxml.cpp \
+	tinyxml/tinyxmlerror.cpp \
+	tinyxml/tinyxmlparser.cpp
+
+PFS_SRC=\
+	physfs/physfs.c \
+	physfs/physfs_archiver_dir.c \
+	physfs/physfs_archiver_unpacked.c \
+	physfs/physfs_archiver_zip.c \
+	physfs/physfs_byteorder.c \
+	physfs/physfs_unicode.c \
+	physfs/physfs_platform_posix.c \
+	physfs/physfs_platform_unix.c \
+	physfs/physfs_platform_windows.c
+
+PNG_SRC=lodepng/lodepng.c
+
+SRCS += $(VVV_SRC) $(XML_SRC) $(PFS_SRC) $(PNG_SRC)
+SRCS := $(addprefix $(CURDIR)/, $(SRCS))
+
+NXDK_SDL = y
+NXDK_CXX = y
+
+all_local: all
+
+include $(NXDK_DIR)/Makefile
+
+# You need data.zip from http://distractionware.com/blog/category/vvvvvv-make-and-play/
+download_data:
+	@mkdir -p $(OUTPUT_DIR)
+	wget -N http://www.flibitijibibo.com/VVVVVV-MP-10202016.zip -O VVVVVV-MP.zip
+	unzip -p VVVVVV-MP.zip VVVVVV-MP/data.zip > $(OUTPUT_DIR)/data.zip
+	rm -f VVVVVV-MP.zip
