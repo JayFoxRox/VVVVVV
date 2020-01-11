@@ -22,6 +22,8 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
+#undef _MSC_VER
+
 #include <ctype.h>
 
 #ifdef TIXML_USE_STL
@@ -1276,7 +1278,11 @@ int TiXmlAttribute::IntValue() const
 
 double  TiXmlAttribute::DoubleValue() const
 {
+#ifndef XBOX
 	return atof (value.c_str ());
+#else
+  return 0.0f;
+#endif
 }
 
 
