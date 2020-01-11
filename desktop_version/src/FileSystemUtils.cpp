@@ -198,11 +198,17 @@ std::vector<std::string> FILESYSTEM_getLevelDirFileNames()
 void PLATFORM_getOSDirectory(char* output)
 {
 #ifdef _WIN32
+#if !defined(XBOX)
 	/* This block is here for compatibility, do not touch it! */
 	WCHAR utf16_path[MAX_PATH];
 	SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, utf16_path);
 	WideCharToMultiByte(CP_UTF8, 0, utf16_path, -1, output, MAX_PATH, NULL, NULL);
 	strcat(output, "\\VVVVVV\\");
+#else
+	//FIXME: strcpy(output, "T:\\UDATA"); ?
+	strcpy(output, "D:");
+	strcat(output, "\\VVVVVV\\");
+#endif
 #else
 	strcpy(output, PHYSFS_getPrefDir("distractionware", "VVVVVV"));
 #endif
