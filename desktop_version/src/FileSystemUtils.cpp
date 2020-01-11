@@ -14,6 +14,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#if !defined(XBOX)
 #include <shlobj.h>
 int mkdir(char* path, int mode)
 {
@@ -21,6 +22,9 @@ int mkdir(char* path, int mode)
 	MultiByteToWideChar(CP_UTF8, 0, path, -1, utf16_path, MAX_PATH);
 	return CreateDirectoryW(utf16_path, NULL);
 }
+#else
+#define mkdir(a, b) CreateDirectory(a, NULL)
+#endif
 #define VNEEDS_MIGRATION (mkdirResult != 0)
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 #include <sys/stat.h>
