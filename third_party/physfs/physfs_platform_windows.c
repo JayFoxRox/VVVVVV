@@ -19,10 +19,7 @@
 #ifdef XBOX
 #include <xboxkrnl/xboxkrnl.h>
 #define GetModuleFileNameW(a,b,c) 0
-#define FindNextFileW FindNextFileA
-#define CreateDirectoryW CreateDirectoryA
 #define FlushFileBuffers(a) 0
-#define GetModuleFileNameA()
 #endif
 
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
@@ -88,23 +85,16 @@ static PHYSFS_uint64 wStrLen(const CHAR *wstr)
 
 static char *unicodeToUtf8Heap(const CHAR *w_str)
 {
-#if 0
     char *retval = NULL;
     if (w_str != NULL)
     {
         void *ptr = NULL;
-        const PHYSFS_uint64 len = (wStrLen(w_str) * 4) + 1;
+        const PHYSFS_uint64 len = wStrLen(w_str) + 1;
         retval = allocator.Malloc(len);
         BAIL_IF(!retval, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
-        PHYSFS_utf8FromUtf16((const PHYSFS_uint16 *) w_str, retval, len);
-        ptr = allocator.Realloc(retval, strlen(retval) + 1); /* shrink. */
-        if (ptr != NULL)
-            retval = (char *) ptr;
+        memcpy(retval, w_str, len);
     } /* if */
     return retval;
-#else
-    return strdup(w_str);
-#endif
 } /* unicodeToUtf8Heap */
 
 
@@ -112,7 +102,7 @@ static char *unicodeToUtf8Heap(const CHAR *w_str)
    Since non-WinRT might not have the "Ex" version, we tapdance to use
    the perfectly-fine-and-available-even-on-Win95 API on non-WinRT targets. */
 
-static inline HANDLE winFindFirstFileW(const CHAR *path, LPWIN32_FIND_DATA d)
+static inline HANDLE winFindFirstFile(const CHAR *path, LPWIN32_FIND_DATA d)
 {
     #ifdef PHYSFS_PLATFORM_WINRT
     return FindFirstFileExW(path, FindExInfoStandard, d,
@@ -120,7 +110,7 @@ static inline HANDLE winFindFirstFileW(const CHAR *path, LPWIN32_FIND_DATA d)
     #else
     return FindFirstFile(path, d);
     #endif
-} /* winFindFirstFileW */
+} /* winFindFirstFile */
 
 static inline BOOL winInitializeCriticalSection(LPCRITICAL_SECTION lpcs)
 {
@@ -132,18 +122,18 @@ static inline BOOL winInitializeCriticalSection(LPCRITICAL_SECTION lpcs)
     #endif
 } /* winInitializeCriticalSection */
 
-static inline HANDLE winCreateFileW(const CHAR *wfname, const DWORD mode,
+static inline HANDLE winCreateFile(const CHAR *wfname, const DWORD mode,
                                     const DWORD creation)
 {
+debugPrint("Trying to open '%s'\n", wfname);
     const DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE;
     #ifdef PHYSFS_PLATFORM_WINRT
     return CreateFile2(wfname, mode, share, creation, NULL);
     #else
-debugPrint("Trying to open '%s'\n", wfname);
     return CreateFile(wfname, mode, share, NULL, creation,
                        FILE_ATTRIBUTE_NORMAL, NULL);
     #endif
-} /* winCreateFileW */
+} /* winCreateFile */
 
 static BOOL winSetFilePointer(HANDLE h, const PHYSFS_sint64 pos,
                               PHYSFS_sint64 *_newpos, const DWORD whence)
@@ -689,7 +679,7 @@ PHYSFS_EnumerateCallbackResult __PHYSFS_platformEnumerate(const char *dirname,
     __PHYSFS_smallFree(searchPath);
     BAIL_IF_ERRPASS(!wSearchPath, PHYSFS_ENUM_ERROR);
 
-    dir = winFindFirstFileW(wSearchPath, &entw);
+    dir = winFindFirstFile(wSearchPath, &entw);
     __PHYSFS_smallFree(wSearchPath);
     BAIL_IF(dir==INVALID_HANDLE_VALUE, errcodeFromWinApi(), PHYSFS_ENUM_ERROR);
 
@@ -714,7 +704,7 @@ PHYSFS_EnumerateCallbackResult __PHYSFS_platformEnumerate(const char *dirname,
             if (retval == PHYSFS_ENUM_ERROR)
                 PHYSFS_setErrorCode(PHYSFS_ERR_APP_CALLBACK);
         } /* else */
-    } while ((retval == PHYSFS_ENUM_OK) && (FindNextFileW(dir, &entw) != 0));
+    } while ((retval == PHYSFS_ENUM_OK) && (FindNextFile(dir, &entw) != 0));
 
     FindClose(dir);
 
@@ -727,7 +717,7 @@ int __PHYSFS_platformMkDir(const char *path)
     CHAR *wpath;
     DWORD rc;
     UTF8_TO_UNICODE_STACK(wpath, path);
-    rc = CreateDirectoryW(wpath, NULL);
+    rc = CreateDirectory(wpath, NULL);
     __PHYSFS_smallFree(wpath);
     BAIL_IF(rc == 0, errcodeFromWinApi(), 0);
     return 1;
@@ -743,7 +733,7 @@ static HANDLE doOpen(const char *fname, DWORD mode, DWORD creation)
     BAIL_IF(!wfname, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
 
     debugPrint("Opening '%s'\n", fname);
-    fileh = winCreateFileW(wfname, mode, creation);
+    fileh = winCreateFile(wfname, mode, creation);
     __PHYSFS_smallFree(wfname);
 
     if (fileh == INVALID_HANDLE_VALUE) {
@@ -1001,7 +991,7 @@ static int isSymlink(const CHAR *wpath, const DWORD attr)
     if ((attr & PHYSFS_FILE_ATTRIBUTE_REPARSE_POINT) == 0)
         return 0;  /* not a reparse point? Definitely not a symlink. */
 
-    h = winFindFirstFileW(wpath, &w32dw);
+    h = winFindFirstFile(wpath, &w32dw);
     if (h == INVALID_HANDLE_VALUE)
         return 0;  /* ...maybe the file just vanished...? */
 
