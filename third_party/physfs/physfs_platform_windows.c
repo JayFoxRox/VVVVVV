@@ -16,6 +16,15 @@
 #undef UNICODE
 #endif
 
+#ifdef XBOX
+#include <xboxkrnl/xboxkrnl.h>
+#define GetModuleFileNameW(a,b,c) 0
+#define FindNextFileW FindNextFileA
+#define CreateDirectoryW CreateDirectoryA
+#define FlushFileBuffers(a) 0
+#define GetModuleFileNameA()
+#endif
+
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
 #define _CRT_SECURE_NO_WARNINGS 1
 #endif
@@ -23,7 +32,7 @@
 #define WIN32_LEAN_AND_MEAN 1
 #include <windows.h>
 
-#ifndef PHYSFS_PLATFORM_WINRT
+#if !defined(PHYSFS_PLATFORM_WINRT) && !defined(XBOX)
 #include <userenv.h>
 #include <shlobj.h>
 #endif
@@ -61,15 +70,15 @@
     if (str == NULL) \
         w_assignto = NULL; \
     else { \
-        const size_t len = (PHYSFS_uint64) ((strlen(str) + 1) * 2); \
-        w_assignto = (WCHAR *) __PHYSFS_smallAlloc(len); \
+        const size_t len = (PHYSFS_uint64) ((strlen(str) + 1)); \
+        w_assignto = (CHAR *) __PHYSFS_smallAlloc(len); \
         if (w_assignto != NULL) \
-            PHYSFS_utf8ToUtf16(str, (PHYSFS_uint16 *) w_assignto, len); \
+            memcpy(w_assignto, str, len); \
     } \
 } \
 
-/* Note this counts WCHARs, not codepoints! */
-static PHYSFS_uint64 wStrLen(const WCHAR *wstr)
+/* Note this counts CHARs, not codepoints! */
+static PHYSFS_uint64 wStrLen(const CHAR *wstr)
 {
     PHYSFS_uint64 len = 0;
     while (*(wstr++))
@@ -77,8 +86,9 @@ static PHYSFS_uint64 wStrLen(const WCHAR *wstr)
     return len;
 } /* wStrLen */
 
-static char *unicodeToUtf8Heap(const WCHAR *w_str)
+static char *unicodeToUtf8Heap(const CHAR *w_str)
 {
+#if 0
     char *retval = NULL;
     if (w_str != NULL)
     {
@@ -92,6 +102,9 @@ static char *unicodeToUtf8Heap(const WCHAR *w_str)
             retval = (char *) ptr;
     } /* if */
     return retval;
+#else
+    return strdup(w_str);
+#endif
 } /* unicodeToUtf8Heap */
 
 
@@ -99,13 +112,13 @@ static char *unicodeToUtf8Heap(const WCHAR *w_str)
    Since non-WinRT might not have the "Ex" version, we tapdance to use
    the perfectly-fine-and-available-even-on-Win95 API on non-WinRT targets. */
 
-static inline HANDLE winFindFirstFileW(const WCHAR *path, LPWIN32_FIND_DATAW d)
+static inline HANDLE winFindFirstFileW(const CHAR *path, LPWIN32_FIND_DATA d)
 {
     #ifdef PHYSFS_PLATFORM_WINRT
     return FindFirstFileExW(path, FindExInfoStandard, d,
                             FindExSearchNameMatch, NULL, 0);
     #else
-    return FindFirstFileW(path, d);
+    return FindFirstFile(path, d);
     #endif
 } /* winFindFirstFileW */
 
@@ -119,14 +132,15 @@ static inline BOOL winInitializeCriticalSection(LPCRITICAL_SECTION lpcs)
     #endif
 } /* winInitializeCriticalSection */
 
-static inline HANDLE winCreateFileW(const WCHAR *wfname, const DWORD mode,
+static inline HANDLE winCreateFileW(const CHAR *wfname, const DWORD mode,
                                     const DWORD creation)
 {
     const DWORD share = FILE_SHARE_READ | FILE_SHARE_WRITE;
     #ifdef PHYSFS_PLATFORM_WINRT
     return CreateFile2(wfname, mode, share, creation, NULL);
     #else
-    return CreateFileW(wfname, mode, share, NULL, creation,
+debugPrint("Trying to open '%s'\n", wfname);
+    return CreateFile(wfname, mode, share, NULL, creation,
                        FILE_ATTRIBUTE_NORMAL, NULL);
     #endif
 } /* winCreateFileW */
@@ -422,7 +436,7 @@ void __PHYSFS_platformDetectAvailableCDs(PHYSFS_StringCallback cb, void *data)
 } /* __PHYSFS_platformDetectAvailableCDs */
 
 #ifdef PHYSFS_PLATFORM_WINRT
-static char *calcDirAppendSep(const WCHAR *wdir)
+static char *calcDirAppendSep(const CHAR *wdir)
 {
     size_t len;
     void *ptr;
@@ -447,8 +461,9 @@ static char *calcDirAppendSep(const WCHAR *wdir)
 char *__PHYSFS_platformCalcBaseDir(const char *argv0)
 {
 #ifdef PHYSFS_PLATFORM_WINRT
-    return calcDirAppendSep((const WCHAR *) __PHYSFS_winrtCalcBaseDir());
+    return calcDirAppendSep((const CHAR *) __PHYSFS_winrtCalcBaseDir());
 #else
+#ifndef XBOX
     char *retval = NULL;
     DWORD buflen = 64;
     LPWSTR modpath = NULL;
@@ -458,7 +473,7 @@ char *__PHYSFS_platformCalcBaseDir(const char *argv0)
         DWORD rc;
         void *ptr;
 
-        if ( (ptr = allocator.Realloc(modpath, buflen*sizeof(WCHAR))) == NULL )
+        if ( (ptr = allocator.Realloc(modpath, buflen*sizeof(CHAR))) == NULL )
         {
             allocator.Free(modpath);
             BAIL(PHYSFS_ERR_OUT_OF_MEMORY, NULL);
@@ -483,7 +498,7 @@ char *__PHYSFS_platformCalcBaseDir(const char *argv0)
 
     if (buflen > 0)  /* just in case... */
     {
-        WCHAR *ptr = (modpath + buflen) - 1;
+        CHAR *ptr = (modpath + buflen) - 1;
         while (ptr != modpath)
         {
             if (*ptr == '\\')
@@ -502,6 +517,9 @@ char *__PHYSFS_platformCalcBaseDir(const char *argv0)
     allocator.Free(modpath);
 
     return retval;   /* w00t. */
+#else
+    return "D:\\"; //FIXME
+#endif
 #endif
 } /* __PHYSFS_platformCalcBaseDir */
 
@@ -509,7 +527,7 @@ char *__PHYSFS_platformCalcBaseDir(const char *argv0)
 char *__PHYSFS_platformCalcPrefDir(const char *org, const char *app)
 {
 #ifdef PHYSFS_PLATFORM_WINRT
-    return calcDirAppendSep((const WCHAR *) __PHYSFS_winrtCalcPrefDir());
+    return calcDirAppendSep((const CHAR *) __PHYSFS_winrtCalcPrefDir());
 #else
     /*
      * Vista and later has a new API for this, but SHGetFolderPath works there,
@@ -519,16 +537,20 @@ char *__PHYSFS_platformCalcPrefDir(const char *org, const char *app)
      *                          NULL, &wszPath);
      */
 
-    WCHAR path[MAX_PATH];
+    CHAR path[MAX_PATH];
     char *utf8 = NULL;
     size_t len = 0;
     char *retval = NULL;
 
+#ifndef XBOX
     if (!SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_APPDATA | CSIDL_FLAG_CREATE,
                                    NULL, 0, path)))
         BAIL(PHYSFS_ERR_OS_ERROR, NULL);
 
     utf8 = unicodeToUtf8Heap(path);
+#else
+    utf8 = strdup(path);
+#endif
     BAIL_IF_ERRPASS(!utf8, NULL);
     len = strlen(utf8) + strlen(org) + strlen(app) + 4;
     retval = allocator.Malloc(len);
@@ -548,8 +570,9 @@ char *__PHYSFS_platformCalcPrefDir(const char *org, const char *app)
 char *__PHYSFS_platformCalcUserDir(void)
 {
 #ifdef PHYSFS_PLATFORM_WINRT
-    return calcDirAppendSep((const WCHAR *) __PHYSFS_winrtCalcPrefDir());
+    return calcDirAppendSep((const CHAR *) __PHYSFS_winrtCalcPrefDir());
 #else
+#ifndef XBOX
     typedef BOOL (WINAPI *fnGetUserProfDirW)(HANDLE, LPWSTR, LPDWORD);
     fnGetUserProfDirW pGetDir = NULL;
     HANDLE lib = NULL;
@@ -580,14 +603,14 @@ char *__PHYSFS_platformCalcUserDir(void)
 
         if (psize == 0)  /* probably on Windows XP, try a different way. */
         {
-            WCHAR x = 0;
+            CHAR x = 0;
             rc = pGetDir(accessToken, &x, &psize);
             GOTO_IF(rc, PHYSFS_ERR_OS_ERROR, done);  /* should have failed! */
             GOTO_IF(!psize, PHYSFS_ERR_OS_ERROR, done);  /* Uhoh... */
         } /* if */
 
         /* Allocate memory for the profile directory */
-        wstr = (LPWSTR) __PHYSFS_smallAlloc((psize + 1) * sizeof (WCHAR));
+        wstr = (LPWSTR) __PHYSFS_smallAlloc((psize + 1) * sizeof (CHAR));
         if (wstr != NULL)
         {
             if (pGetDir(accessToken, wstr, &psize))
@@ -609,6 +632,9 @@ done:
         CloseHandle(accessToken);
     FreeLibrary(lib);
     return retval;  /* We made it: hit the showers. */
+#else
+    return "D:\\"; //FIXME
+#endif
 #endif
 } /* __PHYSFS_platformCalcUserDir */
 
@@ -637,10 +663,10 @@ PHYSFS_EnumerateCallbackResult __PHYSFS_platformEnumerate(const char *dirname,
 {
     PHYSFS_EnumerateCallbackResult retval = PHYSFS_ENUM_OK;
     HANDLE dir = INVALID_HANDLE_VALUE;
-    WIN32_FIND_DATAW entw;
+    WIN32_FIND_DATA entw;
     size_t len = strlen(dirname);
     char *searchPath = NULL;
-    WCHAR *wSearchPath = NULL;
+    CHAR *wSearchPath = NULL;
 
     /* Allocate a new string for path, maybe '\\', "*", and NULL terminator */
     searchPath = (char *) __PHYSFS_smallAlloc(len + 3);
@@ -669,7 +695,7 @@ PHYSFS_EnumerateCallbackResult __PHYSFS_platformEnumerate(const char *dirname,
 
     do
     {
-        const WCHAR *fn = entw.cFileName;
+        const CHAR *fn = entw.cFileName;
         char *utf8;
 
         if (fn[0] == '.')  /* ignore "." and ".." */
@@ -698,7 +724,7 @@ PHYSFS_EnumerateCallbackResult __PHYSFS_platformEnumerate(const char *dirname,
 
 int __PHYSFS_platformMkDir(const char *path)
 {
-    WCHAR *wpath;
+    CHAR *wpath;
     DWORD rc;
     UTF8_TO_UNICODE_STACK(wpath, path);
     rc = CreateDirectoryW(wpath, NULL);
@@ -711,7 +737,7 @@ int __PHYSFS_platformMkDir(const char *path)
 static HANDLE doOpen(const char *fname, DWORD mode, DWORD creation)
 {
     HANDLE fileh;
-    WCHAR *wfname;
+    CHAR *wfname;
 
     UTF8_TO_UNICODE_STACK(wfname, fname);
     BAIL_IF(!wfname, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
@@ -847,8 +873,9 @@ void __PHYSFS_platformClose(void *opaque)
 } /* __PHYSFS_platformClose */
 
 
-static int doPlatformDelete(LPWSTR wpath)
+static int doPlatformDelete(LPSTR wpath)
 {
+#ifndef XBOX
     WIN32_FILE_ATTRIBUTE_DATA info;
     if (!GetFileAttributesExW(wpath, GetFileExInfoStandard, &info))
         BAIL(errcodeFromWinApi(), 0);
@@ -859,13 +886,16 @@ static int doPlatformDelete(LPWSTR wpath)
         BAIL_IF(!rc, errcodeFromWinApi(), 0);
     } /* else */
     return 1;   /* if you made it here, it worked. */
+#else
+    return 0;
+#endif
 } /* doPlatformDelete */
 
 
 int __PHYSFS_platformDelete(const char *path)
 {
     int retval = 0;
-    LPWSTR wpath = NULL;
+    LPSTR wpath = NULL;
     UTF8_TO_UNICODE_STACK(wpath, path);
     BAIL_IF(!wpath, PHYSFS_ERR_OUT_OF_MEMORY, 0);
     retval = doPlatformDelete(wpath);
@@ -912,6 +942,7 @@ void __PHYSFS_platformReleaseMutex(void *mutex)
 
 static PHYSFS_sint64 FileTimeToPhysfsTime(const FILETIME *ft)
 {
+#ifndef XBOX
     SYSTEMTIME st_utc;
     SYSTEMTIME st_localtz;
     TIME_ZONE_INFORMATION tzi;
@@ -941,6 +972,9 @@ static PHYSFS_sint64 FileTimeToPhysfsTime(const FILETIME *ft)
     retval = (PHYSFS_sint64) mktime(&tm);
     BAIL_IF(retval == -1, PHYSFS_ERR_OS_ERROR, -1);
     return retval;
+#else
+    return -1;
+#endif
 } /* FileTimeToPhysfsTime */
 
 
@@ -951,9 +985,9 @@ static PHYSFS_sint64 FileTimeToPhysfsTime(const FILETIME *ft)
    NTFS symlinks are a form of "reparse point" (junction, volume mount,
    etc), so if the REPARSE_POINT attribute is set, check for the symlink
    tag thereafter. This assumes you already read in the file attributes. */
-static int isSymlink(const WCHAR *wpath, const DWORD attr)
+static int isSymlink(const CHAR *wpath, const DWORD attr)
 {
-    WIN32_FIND_DATAW w32dw;
+    WIN32_FIND_DATAA w32dw;
     HANDLE h;
 
     if ((attr & PHYSFS_FILE_ATTRIBUTE_REPARSE_POINT) == 0)
@@ -970,8 +1004,9 @@ static int isSymlink(const WCHAR *wpath, const DWORD attr)
 
 int __PHYSFS_platformStat(const char *filename, PHYSFS_Stat *st, const int follow)
 {
+#ifndef XBOX
     WIN32_FILE_ATTRIBUTE_DATA winstat;
-    WCHAR *wstr = NULL;
+    CHAR *wstr = NULL;
     DWORD err = 0;
     BOOL rc = 0;
     int issymlink = 0;
@@ -1019,6 +1054,20 @@ int __PHYSFS_platformStat(const char *filename, PHYSFS_Stat *st, const int follo
     st->readonly = ((winstat.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
 
     return 1;
+#else
+    FILE* f = fopen(filename, "rb");
+    if (f != NULL) {
+      fseek(f, 0, SEEK_END);
+      st->filesize = ftell(f);
+      fclose(f);
+      st->filetype = PHYSFS_FILETYPE_REGULAR;
+      st->readonly = 0;
+    } else {
+      st->filetype = PHYSFS_FILETYPE_DIRECTORY;
+      st->filesize = 0;
+    }
+    return 1;
+#endif
 } /* __PHYSFS_platformStat */
 
 #endif  /* PHYSFS_PLATFORM_WINDOWS */
