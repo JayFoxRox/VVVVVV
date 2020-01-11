@@ -5,7 +5,7 @@
  *
  *  This file written by Ryan C. Gordon, and made sane by Gregory S. Read.
  */
-
+#include <hal/debug.h>
 #define __PHYSICSFS_INTERNAL__
 #include "physfs_platforms.h"
 
@@ -742,12 +742,16 @@ static HANDLE doOpen(const char *fname, DWORD mode, DWORD creation)
     UTF8_TO_UNICODE_STACK(wfname, fname);
     BAIL_IF(!wfname, PHYSFS_ERR_OUT_OF_MEMORY, NULL);
 
+    debugPrint("Opening '%s'\n", fname);
     fileh = winCreateFileW(wfname, mode, creation);
     __PHYSFS_smallFree(wfname);
 
-    if (fileh == INVALID_HANDLE_VALUE)
+    if (fileh == INVALID_HANDLE_VALUE) {
+        debugPrint("fuck failed '%s'\n", fname);
         BAIL(errcodeFromWinApi(), INVALID_HANDLE_VALUE);
+    }
 
+    debugPrint("ok ok '%s'\n", fname);
     return fileh;
 } /* doOpen */
 
@@ -793,9 +797,13 @@ PHYSFS_sint64 __PHYSFS_platformRead(void *opaque, void *buf, PHYSFS_uint64 len)
     while (len > 0)
     {
         const DWORD thislen = (len > 0xFFFFFFFF) ? 0xFFFFFFFF : (DWORD) len;
+debugPrint("Reading %lld from file %p to %p\n", (long long int)thislen, h, buf);
         DWORD numRead = 0;
-        if (!ReadFile(h, buf, thislen, &numRead, NULL))
+        if (!ReadFile(h, buf, thislen, &numRead, NULL)) {
+debugPrint("Reading failed %lld\n", (long long int)numRead);
             BAIL(errcodeFromWinApi(), -1);
+        }
+debugPrint("Reading done %lld\n", (long long int)numRead);
         len -= (PHYSFS_uint64) numRead;
         totalRead += (PHYSFS_sint64) numRead;
         if (numRead != thislen)
