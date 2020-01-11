@@ -21,7 +21,11 @@
 
 // lol, Win32 -flibit
 #ifdef _WIN32
+#ifndef XBOX
 #define strcasecmp stricmp
+#else
+#define strcasecmp strcmp //FIXME: !!!
+#endif
 #endif
 
 //TODO: Non Urgent code cleanup
