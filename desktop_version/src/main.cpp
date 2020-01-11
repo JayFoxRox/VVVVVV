@@ -62,9 +62,13 @@ int main(int argc, char *argv[])
         SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, argv[2], SDL_HINT_OVERRIDE);
     }
 
+debugPrint("\n\n\n\n");
+debugPrint("Initializing network\n");
     NETWORK_init();
+debugPrint("Initialization mostly complete\n");
 
     Screen gameScreen;
+debugPrint("Created gameScreen\n");
 
 	printf("\t\t\n");
 	printf("\t\t\n");
@@ -99,23 +103,27 @@ int main(int argc, char *argv[])
 
 
 
-
     UtilityClass help;
+debugPrint("Created help\n");
     // Load Ini
 
 
     Graphics graphics;
-
+debugPrint("Created graphics\n");
 
 
     musicclass music;
+debugPrint("Created music\n");
+
     Game game;
+debugPrint("Created game\n");
     game.infocus = true;
 
     graphics.MakeTileArray();
     graphics.MakeSpriteArray();
     graphics.maketelearray();
 
+debugPrint("Created graphics arrays\n");
 
     graphics.images.push_back(graphics.grphx.im_image0);
     graphics.images.push_back(graphics.grphx.im_image1);
@@ -151,7 +159,7 @@ int main(int argc, char *argv[])
 
 	graphics.tempBuffer = SDL_CreateRGBSurface(SDL_SWSURFACE ,320 ,240 ,fmt->BitsPerPixel,fmt->Rmask,fmt->Gmask,fmt->Bmask,fmt->Amask  );
     SDL_SetSurfaceBlendMode(graphics.tempBuffer, SDL_BLENDMODE_NONE);
-
+debugPrint("Created SDL surfaces\n");
     //Make a temporary rectangle to hold the offsets
     // SDL_Rect offset;
     //Give the offsets to the rectangle
@@ -253,6 +261,7 @@ int main(int argc, char *argv[])
     game.infocus = true;
     key.isActive = true;
 
+debugPrint("Entering mainloop\n");
     while(!key.quitProgram)
     {
 		//gameScreen.ClearScreen(0x00);
