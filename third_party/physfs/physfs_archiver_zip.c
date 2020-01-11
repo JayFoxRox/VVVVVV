@@ -7,6 +7,9 @@
  *   by Gilles Vollant.
  */
 
+#include <hal/debug.h>
+
+
 #define __PHYSICSFS_INTERNAL__
 #include "physfs_internal.h"
 
@@ -374,6 +377,7 @@ static PHYSFS_sint64 ZIP_tell(PHYSFS_Io *io)
 
 static int ZIP_seek(PHYSFS_Io *_io, PHYSFS_uint64 offset)
 {
+debugPrint("ZIP %d seek %lld\n", __LINE__, (long long int)offset);
     ZIPfileinfo *finfo = (ZIPfileinfo *) _io->opaque;
     ZIPentry *entry = finfo->entry;
     PHYSFS_Io *io = finfo->io;
@@ -828,18 +832,26 @@ static int zip_parse_local(PHYSFS_Io *io, ZIPentry *entry)
     /* !!! FIXME: apparently these are zero if general purpose bit 3 is set,
        !!! FIXME:  which is probably true for Jar files, fwiw, but we don't
        !!! FIXME:  care about these values anyhow. */
-
+debugPrint("ZIP %d %d\n", __LINE__, entry->offset);
     BAIL_IF_ERRPASS(!io->seek(io, entry->offset), 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF_ERRPASS(!readui32(io, &ui32), 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF(ui32 != ZIP_LOCAL_FILE_SIG, PHYSFS_ERR_CORRUPT, 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF_ERRPASS(!readui16(io, &ui16), 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF(ui16 != entry->version_needed, PHYSFS_ERR_CORRUPT, 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF_ERRPASS(!readui16(io, &ui16), 0);  /* general bits. */
     BAIL_IF_ERRPASS(!readui16(io, &ui16), 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF(ui16 != entry->compression_method, PHYSFS_ERR_CORRUPT, 0);
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF_ERRPASS(!readui32(io, &ui32), 0);  /* date/time */
     BAIL_IF_ERRPASS(!readui32(io, &ui32), 0);
     BAIL_IF(ui32 && (ui32 != entry->crc), PHYSFS_ERR_CORRUPT, 0);
+debugPrint("ZIP %d\n", __LINE__);
 
     BAIL_IF_ERRPASS(!readui32(io, &ui32), 0);
     BAIL_IF(ui32 && (ui32 != 0xFFFFFFFF) &&
@@ -848,11 +860,12 @@ static int zip_parse_local(PHYSFS_Io *io, ZIPentry *entry)
     BAIL_IF_ERRPASS(!readui32(io, &ui32), 0);
     BAIL_IF(ui32 && (ui32 != 0xFFFFFFFF) &&
                  (ui32 != entry->uncompressed_size), PHYSFS_ERR_CORRUPT, 0);
-
+debugPrint("ZIP %d\n", __LINE__);
     BAIL_IF_ERRPASS(!readui16(io, &fnamelen), 0);
     BAIL_IF_ERRPASS(!readui16(io, &extralen), 0);
 
     entry->offset += fnamelen + extralen + 30;
+debugPrint("ZIP %d\n", __LINE__);
     return 1;
 } /* zip_parse_local */
 
@@ -861,7 +874,7 @@ static int zip_resolve(PHYSFS_Io *io, ZIPinfo *info, ZIPentry *entry)
 {
     int retval = 1;
     const ZipResolveType resolve_type = entry->resolved;
-
+debugPrint("ZIP %d\n", __LINE__);
     if (resolve_type == ZIP_DIRECTORY)
         return 1;   /* we're good. */
 
@@ -886,8 +899,9 @@ static int zip_resolve(PHYSFS_Io *io, ZIPinfo *info, ZIPentry *entry)
             entry->resolved = ZIP_DIRECTORY;
             return 1;
         } /* if */
-
+debugPrint("ZIP %d\n", __LINE__);
         retval = zip_parse_local(io, entry);
+debugPrint("ZIP %d\n", __LINE__);
         if (retval)
         {
             /*
@@ -895,8 +909,10 @@ static int zip_resolve(PHYSFS_Io *io, ZIPinfo *info, ZIPentry *entry)
              *  resolution of other entries (other symlinks and, eventually,
              *  the real file) if all goes well.
              */
+debugPrint("ZIP %d\n", __LINE__);
             if (resolve_type == ZIP_UNRESOLVED_SYMLINK)
                 retval = zip_resolve_symlink(io, info, entry);
+debugPrint("ZIP %d\n", __LINE__);
         } /* if */
 
         if (resolve_type == ZIP_UNRESOLVED_SYMLINK)
@@ -904,7 +920,7 @@ static int zip_resolve(PHYSFS_Io *io, ZIPinfo *info, ZIPentry *entry)
         else if (resolve_type == ZIP_UNRESOLVED_FILE)
             entry->resolved = ((retval) ? ZIP_RESOLVED : ZIP_BROKEN_FILE);
     } /* if */
-
+debugPrint("ZIP %d\n", __LINE__);
     return retval;
 } /* zip_resolve */
 
@@ -1647,9 +1663,10 @@ static int ZIP_mkdir(void *opaque, const char *name)
 
 static int ZIP_stat(void *opaque, const char *filename, PHYSFS_Stat *stat)
 {
+debugPrint("ZIP %d %s\n", __LINE__, filename);
     ZIPinfo *info = (ZIPinfo *) opaque;
     ZIPentry *entry = zip_find_entry(info, filename);
-
+debugPrint("ZIP %d %s\n", __LINE__, filename);
     if (entry == NULL)
         return 0;
 
@@ -1660,24 +1677,28 @@ static int ZIP_stat(void *opaque, const char *filename, PHYSFS_Stat *stat)
     {
         stat->filesize = 0;
         stat->filetype = PHYSFS_FILETYPE_DIRECTORY;
+debugPrint("ZIP %d %s\n", __LINE__, filename);
     } /* if */
 
     else if (zip_entry_is_symlink(entry))
     {
         stat->filesize = 0;
         stat->filetype = PHYSFS_FILETYPE_SYMLINK;
+debugPrint("ZIP %d %s\n", __LINE__, filename);
     } /* else if */
 
     else
     {
         stat->filesize = (PHYSFS_sint64) entry->uncompressed_size;
         stat->filetype = PHYSFS_FILETYPE_REGULAR;
+debugPrint("ZIP %d %s\n", __LINE__, filename);
     } /* else */
 
     stat->modtime = ((entry) ? entry->last_mod_time : 0);
     stat->createtime = stat->modtime;
     stat->accesstime = -1;
     stat->readonly = 1; /* .zip files are always read only */
+debugPrint("ZIP %d %s\n", __LINE__, filename);
 
     return 1;
 } /* ZIP_stat */
