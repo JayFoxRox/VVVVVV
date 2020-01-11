@@ -29,6 +29,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hal/debug.h>
+#include <hal/video.h>
+#include <windows.h>
+
 scriptclass script;
  edentities edentity[3000];
 
@@ -36,6 +40,11 @@ scriptclass script;
 
 int main(int argc, char *argv[])
 {
+    char* args[] = {"D:\\VVVVVV"};
+    argv = args;
+
+    XVideoSetMode(640, 480, 32, REFRESH_DEFAULT);
+
     if(!FILESYSTEM_init(argv[0]))
     {
         return 1;
