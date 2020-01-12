@@ -18,8 +18,7 @@
 
 #ifdef XBOX
 #include <xboxkrnl/xboxkrnl.h>
-#define GetModuleFileNameW(a,b,c) 0
-#define FlushFileBuffers(a) 0
+#define FlushFileBuffers(a) 1
 #endif
 
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
