@@ -74,11 +74,11 @@ int main(int argc, char *argv[])
     argv = args;
     argc = 1;
 
-    XVideoSetMode(640, 480, 32, REFRESH_DEFAULT);
+    XVideoSetMode(640, 480, 16, REFRESH_DEFAULT);
 
 #if 1
     // We consume a lot of memory, so we need to claim the framebuffer
-    size_t fb_size = 640 * 480 * 4;
+    size_t fb_size = 640 * 480 * 2;
     _fb = (uint8_t*)MmAllocateContiguousMemoryEx(fb_size, 0, 0xFFFFFFFF, 0x1000, PAGE_READWRITE | PAGE_WRITECOMBINE);
     memset(_fb, 0x00, fb_size);
 #define _PCRTC_START				0xFD600800
