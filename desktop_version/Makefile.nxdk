@@ -2,9 +2,9 @@ XBE_TITLE = VVVVVV
 GEN_XISO = $(XBE_TITLE).iso
 
 CXXFLAGS=-I$(CURDIR)/src \
-         -I$(CURDIR)/tinyxml \
-         -I$(CURDIR)/physfs \
-         -I$(CURDIR)/lodepng \
+         -I$(CURDIR)/../third_party/tinyxml \
+         -I$(CURDIR)/../third_party/physfs \
+         -I$(CURDIR)/../third_party/lodepng \
          -Wall
 
 CFLAGS=-DPHYSFS_NO_CDROM_SUPPORT=1 \
@@ -58,23 +58,23 @@ VVV_SRC=\
 	src/GOGNetwork.c
 
 XML_SRC=\
-	tinyxml/tinystr.cpp \
-	tinyxml/tinyxml.cpp \
-	tinyxml/tinyxmlerror.cpp \
-	tinyxml/tinyxmlparser.cpp
+	../third_party/tinyxml/tinystr.cpp \
+	../third_party/tinyxml/tinyxml.cpp \
+	../third_party/tinyxml/tinyxmlerror.cpp \
+	../third_party/tinyxml/tinyxmlparser.cpp
 
 PFS_SRC=\
-	physfs/physfs.c \
-	physfs/physfs_archiver_dir.c \
-	physfs/physfs_archiver_unpacked.c \
-	physfs/physfs_archiver_zip.c \
-	physfs/physfs_byteorder.c \
-	physfs/physfs_unicode.c \
-	physfs/physfs_platform_posix.c \
-	physfs/physfs_platform_unix.c \
-	physfs/physfs_platform_windows.c
+	../third_party/physfs/physfs.c \
+	../third_party/physfs/physfs_archiver_dir.c \
+	../third_party/physfs/physfs_archiver_unpacked.c \
+	../third_party/physfs/physfs_archiver_zip.c \
+	../third_party/physfs/physfs_byteorder.c \
+	../third_party/physfs/physfs_unicode.c \
+	../third_party/physfs/physfs_platform_posix.c \
+	../third_party/physfs/physfs_platform_unix.c \
+	../third_party/physfs/physfs_platform_windows.c
 
-PNG_SRC=lodepng/lodepng.c
+PNG_SRC=../third_party/lodepng/lodepng.c
 
 SRCS += $(VVV_SRC) $(XML_SRC) $(PFS_SRC) $(PNG_SRC)
 SRCS := $(addprefix $(CURDIR)/, $(SRCS))
