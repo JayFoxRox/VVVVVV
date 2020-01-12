@@ -5,6 +5,7 @@ CXXFLAGS=-I$(CURDIR)/src \
          -I$(CURDIR)/../third_party/tinyxml \
          -I$(CURDIR)/../third_party/physfs \
          -I$(CURDIR)/../third_party/lodepng \
+         -DBLOBCACHE=1 \
          -Wall
 
 CFLAGS=-DPHYSFS_NO_CDROM_SUPPORT=1 \
