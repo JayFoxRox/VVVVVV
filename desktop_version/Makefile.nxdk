@@ -88,9 +88,17 @@ all_local: all
 
 include $(NXDK_DIR)/Makefile
 
+download_data: $(OUTPUT_DIR)/data.zip
+
 # You need data.zip from http://distractionware.com/blog/category/vvvvvv-make-and-play/
-download_data:
+$(OUTPUT_DIR)/data.zip:
 	@mkdir -p $(OUTPUT_DIR)
 	wget -N http://www.flibitijibibo.com/VVVVVV-MP-10202016.zip -O VVVVVV-MP.zip
 	unzip -p VVVVVV-MP.zip VVVVVV-MP/data.zip > $(OUTPUT_DIR)/data.zip
 	rm -f VVVVVV-MP.zip
+
+install_data: $(OUTPUT_DIR)/data.zip
+	@mkdir -p $(OUTPUT_DIR)/VVVVVV
+	unzip -o $(OUTPUT_DIR)/data.zip -d $(OUTPUT_DIR)/VVVVVV; true
+	rm -f $(OUTPUT_DIR)/VVVVVV/vvvvvvmusic.vvv
+	rm -f $(OUTPUT_DIR)/data.zip
