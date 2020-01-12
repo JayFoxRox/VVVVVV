@@ -187,7 +187,7 @@ void Game::init(void)
     slowdown = 30;
     gameframerate=34;
 
-    fullscreen = false;// true; //Assumed true at first unless overwritten at some point!
+    fullscreen = true; //Assumed true at first unless overwritten at some point!
     stretchMode = 0;
     useLinearFilter = false;
     advanced_mode = false;
