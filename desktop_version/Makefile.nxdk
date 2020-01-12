@@ -83,6 +83,8 @@ SRCS := $(addprefix $(CURDIR)/, $(SRCS))
 NXDK_SDL = y
 NXDK_CXX = y
 
+NXDK_STACKSIZE = 131072
+
 all_local: all
 
 include $(NXDK_DIR)/Makefile
