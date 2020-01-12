@@ -35,7 +35,7 @@ static bool addMusicCollection(const char* path, std::vector<MusicTrack>& musicT
 	while(*name != NULL)
 	{
 		int index = musicReadBlob.getIndex(*name);
-		SDL_RWops *rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
+		SDL_RWops *rw = musicReadBlob.getRWops(index);
 		musicTracks.push_back(MusicTrack( rw ));
 		name++;
 	}

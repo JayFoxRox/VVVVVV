@@ -23,6 +23,9 @@ binaryBlob::binaryBlob()
 }
 
 #ifdef VVV_COMPILEMUSIC
+#ifdef BLOBCACHE
+#error Must disable BLOBCACHE for VVV_COMPILEMUSIC
+#endif
 void binaryBlob::AddFileToBinaryBlob(const char* _path)
 {
 	long size;
@@ -79,6 +82,17 @@ void binaryBlob::writeBinaryBlob(const char* _name)
 }
 #endif
 
+#ifdef BLOBCACHE
+static void getCachePath(char* cachepath, const char* name, int i)
+{
+#ifdef XBOX
+	sprintf(cachepath, "./cache/%d.bin", i); //FIXME: `X:\\` or some bullshit ?
+#else
+	sprintf(cachepath, "./cache/%d.bin", i);
+#endif
+}
+#endif
+
 bool binaryBlob::unPackBinary(const char* name)
 {
 	PHYSFS_sint64 size;
@@ -89,6 +103,10 @@ bool binaryBlob::unPackBinary(const char* name)
 		printf("Unable to open file %s\n", name);
 		return false;
 	}
+
+#ifdef BLOBCACHE
+	m_name = strdup(name);
+#endif
 
 	size = PHYSFS_fileLength(handle);
 
@@ -101,8 +119,29 @@ bool binaryBlob::unPackBinary(const char* name)
 		if (m_headers[i].valid)
 		{
 			PHYSFS_seek(handle, offset);
+#ifndef BLOBCACHE
 			m_memblocks[i] = (char*) malloc(m_headers[i].size);
 			PHYSFS_readBytes(handle, m_memblocks[i], m_headers[i].size);
+#else
+			char cachepath[256];
+			getCachePath(cachepath, name, i);
+			unsigned char buffer[1024];
+			FILE *cachehandle = fopen(cachepath, "wb");
+			size_t remainingsize = m_headers[i].size;
+			while(remainingsize > 0)
+			{
+				size_t chunksize = remainingsize;
+				if (chunksize > sizeof(buffer))
+				{
+					chunksize = sizeof(buffer);
+				}
+				PHYSFS_readBytes(handle, buffer, chunksize);
+				size_t writtensize = fwrite(buffer, 1, chunksize, cachehandle);
+				SDL_assert(writtensize == chunksize);
+				remainingsize -= writtensize;
+			}
+			fclose(cachehandle);
+#endif
 			offset += m_headers[i].size;
 		}
 	}
@@ -135,12 +174,13 @@ int binaryBlob::getIndex(const char* _name)
 	return -1;
 }
 
-int binaryBlob::getSize(int _index)
+SDL_RWops *binaryBlob::getRWops(int _index)
 {
-	return m_headers[_index].size;
-}
-
-char* binaryBlob::getAddress(int _index)
-{
-	return m_memblocks[_index];
+#ifndef BLOBCACHE
+	return SDL_RWFromMem(m_memblocks[_index], m_headers[_index].size);
+#else
+	char cachepath[256];
+	getCachePath(cachepath, m_name, _index);
+	return SDL_RWFromFile(cachepath, "rb");
+#endif
 }
