@@ -34,6 +34,11 @@
 #include <windows.h>
 
 extern "C" {
+    extern int nextCol;
+    extern int nextRow;
+}
+
+extern "C" {
     extern uint8_t* _fb;
 }
 
@@ -559,6 +564,25 @@ debugPrint("Entering mainloop\n");
         graphics.processfade();
         game.gameclock();
         gameScreen.FlipScreen();
+
+nextCol = 25;
+nextRow = 300;
+
+  debugPrint("           Memory statistics:\n");
+  MM_STATISTICS ms;
+  ms.Length = sizeof(MM_STATISTICS);
+  MmQueryStatistics(&ms);
+	#define PRINT(stat) debugPrint("           - " #stat ": %d\n", ms.stat);
+  PRINT(TotalPhysicalPages)
+  PRINT(AvailablePages)
+  PRINT(VirtualMemoryBytesCommitted)
+  PRINT(VirtualMemoryBytesReserved)
+  PRINT(CachePagesCommitted)
+  PRINT(PoolPagesCommitted)
+  PRINT(StackPagesCommitted)
+  PRINT(ImagePagesCommitted)
+  #undef PRINT
+debugPrint("%d\n", (int)GetTickCount());
 
         //SDL_FillRect( SDL_GetVideoSurface(), NULL, 0 );
     }
