@@ -7,6 +7,8 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#undef _MSC_VER
+
 #ifndef _INCLUDE_PHYSFS_INTERNAL_H_
 #define _INCLUDE_PHYSFS_INTERNAL_H_
 
