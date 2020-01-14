@@ -8,11 +8,15 @@
  *  This file written by Ryan C. Gordon.
  */
 
+#include <assert.h>
+#include <windows.h>
+#include <hal/debug.h>
+
 #define __PHYSICSFS_INTERNAL__
 #include "physfs_internal.h"
 
 #if defined(_MSC_VER)
-#include <stdarg.h>
+#include <stdarg.h> 
 
 /* this code came from https://stackoverflow.com/a/8712996 */
 int __PHYSFS_msvc_vsnprintf(char *outBuf, size_t size, const char *format, va_list ap)
@@ -877,35 +881,43 @@ static DirHandle *openDirectory(PHYSFS_Io *io, const char *d, int forWriting)
 
     assert((io != NULL) || (d != NULL));
 
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (io == NULL)
     {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         /* file doesn't exist, etc? Just fail out. */
         PHYSFS_Stat statbuf;
         BAIL_IF_ERRPASS(!__PHYSFS_platformStat(d, &statbuf, 1), NULL);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
 
         /* DIR gets first shot (unlike the rest, it doesn't deal with files). */
         if (statbuf.filetype == PHYSFS_FILETYPE_DIRECTORY)
         {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
             retval = tryOpenDir(io, &__PHYSFS_Archiver_DIR, d, forWriting, &claimed);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
             if (retval || claimed)
                 return retval;
         } /* if */
 
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         io = __PHYSFS_createNativeIo(d, forWriting ? 'w' : 'r');
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         BAIL_IF_ERRPASS(!io, NULL);
         created_io = 1;
     } /* if */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     ext = find_filename_extension(d);
     if (ext != NULL)
     {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         /* Look for archivers with matching file extensions first... */
         for (i = archivers; (*i != NULL) && (retval == NULL) && !claimed; i++)
         {
             if (PHYSFS_utf8stricmp(ext, (*i)->info.extension) == 0)
                 retval = tryOpenDir(io, *i, d, forWriting, &claimed);
         } /* for */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         /* failing an exact file extension match, try all the others... */
         for (i = archivers; (*i != NULL) && (retval == NULL) && !claimed; i++)
         {
@@ -916,6 +928,7 @@ static DirHandle *openDirectory(PHYSFS_Io *io, const char *d, int forWriting)
 
     else  /* no extension? Try them all. */
     {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         for (i = archivers; (*i != NULL) && (retval == NULL) && !claimed; i++)
             retval = tryOpenDir(io, *i, d, forWriting, &claimed);
     } /* else */
@@ -925,7 +938,9 @@ static DirHandle *openDirectory(PHYSFS_Io *io, const char *d, int forWriting)
     if ((!retval) && (created_io))
         io->destroy(io);
 
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     BAIL_IF(!retval, claimed ? errcode : PHYSFS_ERR_UNSUPPORTED, NULL);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     return retval;
 } /* openDirectory */
 
@@ -1024,7 +1039,7 @@ static DirHandle *createDirHandle(PHYSFS_Io *io, const char *newDir,
     char *tmpmntpnt = NULL;
 
     assert(newDir != NULL);  /* should have caught this higher up. */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (mountPoint != NULL)
     {
         const size_t len = strlen(mountPoint) + 1;
@@ -1034,10 +1049,11 @@ static DirHandle *createDirHandle(PHYSFS_Io *io, const char *newDir,
             goto badDirHandle;
         mountPoint = tmpmntpnt;  /* sanitized version. */
     } /* if */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     dirHandle = openDirectory(io, newDir, forWriting);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     GOTO_IF_ERRPASS(!dirHandle, badDirHandle);
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     dirHandle->dirName = (char *) allocator.Malloc(strlen(newDir) + 1);
     GOTO_IF(!dirHandle->dirName, PHYSFS_ERR_OUT_OF_MEMORY, badDirHandle);
     strcpy(dirHandle->dirName, newDir);
@@ -1050,7 +1066,7 @@ static DirHandle *createDirHandle(PHYSFS_Io *io, const char *newDir,
         strcpy(dirHandle->mountPoint, mountPoint);
         strcat(dirHandle->mountPoint, "/");
     } /* if */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     __PHYSFS_smallFree(tmpmntpnt);
     return dirHandle;
 
@@ -1119,17 +1135,20 @@ static char *calculateBaseDir(const char *argv0)
 
 static int initializeMutexes(void)
 {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     errorLock = __PHYSFS_platformCreateMutex();
     if (errorLock == NULL)
         goto initializeMutexes_failed;
 
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     stateLock = __PHYSFS_platformCreateMutex();
     if (stateLock == NULL)
         goto initializeMutexes_failed;
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     return 1;  /* success. */
 
 initializeMutexes_failed:
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (errorLock != NULL)
         __PHYSFS_platformDestroyMutex(errorLock);
 
@@ -1194,34 +1213,44 @@ static int doDeinit(void);
 
 int PHYSFS_init(const char *argv0)
 {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     BAIL_IF(initialized, PHYSFS_ERR_IS_INITIALIZED, 0);
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (!externalAllocator)
         setDefaultAllocator();
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if ((allocator.Init != NULL) && (!allocator.Init())) return 0;
 
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (!__PHYSFS_platformInit())
     {
+assert(0);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         if (allocator.Deinit != NULL) allocator.Deinit();
+debugPrint("%s:%d\n", __FILE__, __LINE__);
         return 0;
     } /* if */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     /* everything below here can be cleaned up safely by doDeinit(). */
 
     if (!initializeMutexes()) goto initFailed;
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     baseDir = calculateBaseDir(argv0);
-    if (!baseDir) goto initFailed;
 
+    if (!baseDir) {
+assert(0);
+    goto initFailed;
+}
+debugPrint("%s:%d [%s]\n", __FILE__, __LINE__, baseDir);
     userDir = __PHYSFS_platformCalcUserDir();
     if (!userDir) goto initFailed;
-
+debugPrint("%s:%d [%s]\n", __FILE__, __LINE__, userDir);
     /* Platform layer is required to append a dirsep. */
     assert(baseDir[strlen(baseDir) - 1] == __PHYSFS_platformDirSeparator);
     assert(userDir[strlen(userDir) - 1] == __PHYSFS_platformDirSeparator);
 
     if (!initStaticArchivers()) goto initFailed;
+debugPrint("%s:%d\n", __FILE__, __LINE__);
 
     initialized = 1;
 
@@ -1690,14 +1719,14 @@ static int doMount(PHYSFS_Io *io, const char *fname,
     DirHandle *dh;
     DirHandle *prev = NULL;
     DirHandle *i;
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     BAIL_IF(!fname, PHYSFS_ERR_INVALID_ARGUMENT, 0);
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (mountPoint == NULL)
         mountPoint = "/";
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     __PHYSFS_platformGrabMutex(stateLock);
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     for (i = searchPath; i != NULL; i = i->next)
     {
         /* already in search path? */
@@ -1705,10 +1734,11 @@ static int doMount(PHYSFS_Io *io, const char *fname,
             BAIL_MUTEX_ERRPASS(stateLock, 1);
         prev = i;
     } /* for */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     dh = createDirHandle(io, fname, mountPoint, 0);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     BAIL_IF_MUTEX_ERRPASS(!dh, stateLock, 0);
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     if (appendToPath)
     {
         if (prev == NULL)
@@ -1721,7 +1751,7 @@ static int doMount(PHYSFS_Io *io, const char *fname,
         dh->next = searchPath;
         searchPath = dh;
     } /* else */
-
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     __PHYSFS_platformReleaseMutex(stateLock);
     return 1;
 } /* doMount */
@@ -1787,7 +1817,9 @@ int PHYSFS_mountHandle(PHYSFS_File *file, const char *fname,
 
 int PHYSFS_mount(const char *newDir, const char *mountPoint, int appendToPath)
 {
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     BAIL_IF(!newDir, PHYSFS_ERR_INVALID_ARGUMENT, 0);
+debugPrint("%s:%d\n", __FILE__, __LINE__);
     return doMount(NULL, newDir, mountPoint, appendToPath);
 } /* PHYSFS_mount */
 
@@ -2012,21 +2044,26 @@ static int verifyPath(DirHandle *h, char **_fname, int allowMissing)
     int retval = 1;
     char *start;
     char *end;
-
+debugPrint("MORE %d\n", __LINE__);
     if (*fname == '\0')  /* quick rejection. */
         return 1;
-
+debugPrint("MORE %d\n", __LINE__);
     /* !!! FIXME: This codeblock sucks. */
     if (h->mountPoint != NULL)  /* NULL mountpoint means "/". */
     {
+debugPrint("null mountpoint path\n");
         size_t mntpntlen = strlen(h->mountPoint);
         size_t len = strlen(fname);
+debugPrint("strlen done\n");
         assert(mntpntlen > 1); /* root mount points should be NULL. */
         /* not under the mountpoint, so skip this archive. */
         BAIL_IF(len < mntpntlen-1, PHYSFS_ERR_NOT_FOUND, 0);
+debugPrint("MORE %d\n", __LINE__);
         /* !!! FIXME: Case insensitive? */
         retval = strncmp(h->mountPoint, fname, mntpntlen-1);
+debugPrint("MORE %d\n", __LINE__);
         BAIL_IF(retval != 0, PHYSFS_ERR_NOT_FOUND, 0);
+debugPrint("MORE %d\n", __LINE__);
         if (len > mntpntlen-1)  /* corner case... */
             BAIL_IF(fname[mntpntlen-1]!='/', PHYSFS_ERR_NOT_FOUND, 0);
         fname += mntpntlen-1;  /* move to start of actual archive path. */
@@ -2035,31 +2072,36 @@ static int verifyPath(DirHandle *h, char **_fname, int allowMissing)
         *_fname = fname;  /* skip mountpoint for later use. */
         retval = 1;  /* may be reset, below. */
     } /* if */
-
+debugPrint("MORE %d\n", __LINE__);
     start = fname;
     if (!allowSymLinks)
     {
+debugPrint("MORE %d\n", __LINE__);
         while (1)
         {
+debugPrint("MORE %d\n", __LINE__);
             PHYSFS_Stat statbuf;
             int rc = 0;
             end = strchr(start, '/');
-
+debugPrint("MORE %d\n", __LINE__);
             if (end != NULL) *end = '\0';
+debugPrint("MORE %d\n", __LINE__);
             rc = h->funcs->stat(h->opaque, fname, &statbuf);
+debugPrint("MORE %d\n", __LINE__);
             if (rc)
                 rc = (statbuf.filetype == PHYSFS_FILETYPE_SYMLINK);
             else if (currentErrorCode() == PHYSFS_ERR_NOT_FOUND)
                 retval = 0;
-
+debugPrint("MORE %d\n", __LINE__);
             if (end != NULL) *end = '/';
-
+debugPrint("MORE %d\n", __LINE__);
             /* insecure path (has a disallowed symlink in it)? */
             BAIL_IF(rc, PHYSFS_ERR_SYMLINK_FORBIDDEN, 0);
-
+debugPrint("MORE %d\n", __LINE__);
             /* break out early if path element is missing. */
             if (!retval)
             {
+debugPrint("MORE %d\n", __LINE__);
                 /*
                  * We need to clear it if it's the last element of the path,
                  *  since this might be a non-existant file we're opening
@@ -2069,10 +2111,10 @@ static int verifyPath(DirHandle *h, char **_fname, int allowMissing)
                     retval = 1;
                 break;
             } /* if */
-
+debugPrint("MORE %d\n", __LINE__);
             if (end == NULL)
                 break;
-
+debugPrint("MORE %d\n", __LINE__);
             start = end + 1;
         } /* while */
     } /* if */
@@ -2614,14 +2656,15 @@ PHYSFS_File *PHYSFS_openRead(const char *_fname)
     FileHandle *fh = NULL;
     char *fname;
     size_t len;
-
+debugPrint("\n\n\n\n");
     BAIL_IF(!_fname, PHYSFS_ERR_INVALID_ARGUMENT, 0);
     len = strlen(_fname) + 1;
     fname = (char *) __PHYSFS_smallAlloc(len);
     BAIL_IF(!fname, PHYSFS_ERR_OUT_OF_MEMORY, 0);
-
+debugPrint("Looking for %s\n", _fname);
     if (sanitizePlatformIndependentPath(_fname, fname))
     {
+debugPrint("Looking for %s for %s\n", fname, _fname);
         DirHandle *i = NULL;
         PHYSFS_Io *io = NULL;
 
@@ -2631,15 +2674,18 @@ PHYSFS_File *PHYSFS_openRead(const char *_fname)
 
         for (i = searchPath; i != NULL; i = i->next)
         {
+debugPrint("Checking in search path %p\n", i);
             char *arcfname = fname;
             if (verifyPath(i, &arcfname, 0))
             {
+debugPrint("Verified\n");
                 io = i->funcs->openRead(i->opaque, arcfname);
                 if (io)
                     break;
             } /* if */
+debugPrint("Not Verified\n");
         } /* for */
-
+debugPrint("Maybe found?\n");
         GOTO_IF_ERRPASS(!io, openReadEnd);
 
         fh = (FileHandle *) allocator.Malloc(sizeof (FileHandle));
