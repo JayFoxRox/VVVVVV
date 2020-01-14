@@ -4,6 +4,8 @@
 /* Laaaazyyyyyyy -flibit */
 // #define VVV_COMPILEMUSIC
 
+#include <SDL.h>
+
 struct resourceheader
 {
 	char name[48];
@@ -27,14 +29,16 @@ public:
 
 	int getIndex(const char* _name);
 
-	int getSize(int _index);
-
-	char* getAddress(int _index);
+  SDL_RWops *getRWops(int _index);
 
 private:
 	int numberofHeaders;
 	resourceheader m_headers[128];
+#ifndef BLOBCACHE
 	char* m_memblocks[128];
+#else
+	char* m_name;
+#endif
 };
 
 

@@ -3,6 +3,46 @@
 #include "Music.h"
 #include "BinaryBlob.h"
 
+static const char* music_names[] = {
+	"data/music/0levelcomplete.ogg",
+	"data/music/1pushingonwards.ogg",
+	"data/music/2positiveforce.ogg",
+	"data/music/3potentialforanything.ogg",
+	"data/music/4passionforexploring.ogg",
+	"data/music/5intermission.ogg",
+	"data/music/6presentingvvvvvv.ogg",
+	"data/music/7gamecomplete.ogg",
+	"data/music/8predestinedfate.ogg",
+	"data/music/9positiveforcereversed.ogg",
+	"data/music/10popularpotpourri.ogg",
+	"data/music/11pipedream.ogg",
+	"data/music/12pressurecooker.ogg",
+	"data/music/13pacedenergy.ogg",
+	"data/music/14piercingthesky.ogg",
+	"data/music/predestinedfatefinallevel.ogg",
+	NULL
+};
+
+static bool addMusicCollection(const char* path, std::vector<MusicTrack>& musicTracks) {
+
+	binaryBlob musicReadBlob;
+	if (!musicReadBlob.unPackBinary(path))
+	{
+		return false;
+	}
+
+	const char** name = music_names;
+	while(*name != NULL)
+	{
+		int index = musicReadBlob.getIndex(*name);
+		SDL_RWops *rw = musicReadBlob.getRWops(index);
+		musicTracks.push_back(MusicTrack( rw ));
+		name++;
+	}
+
+	return true;
+}
+
 musicclass::musicclass()
 {
 	soundTracks.push_back(SoundTrack( "sounds/jump.wav" ));
@@ -36,169 +76,25 @@ musicclass::musicclass()
 
 #ifdef VVV_COMPILEMUSIC
 	binaryBlob musicWriteBlob;
-	musicWriteBlob.AddFileToBinaryBlob("data/music/0levelcomplete.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/1pushingonwards.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/2positiveforce.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/3potentialforanything.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/4passionforexploring.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/5intermission.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/6presentingvvvvvv.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/7gamecomplete.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/8predestinedfate.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/9positiveforcereversed.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/10popularpotpourri.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/11pipedream.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/12pressurecooker.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/13pacedenergy.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/14piercingthesky.ogg");
-	musicWriteBlob.AddFileToBinaryBlob("data/music/predestinedfatefinallevel.ogg");
-
+	const char** name = music_names;
+	while(*name != NULL)
+	{
+		musicWriteBlob.AddFileToBinaryBlob(*name);
+		name++;
+	}
 	musicWriteBlob.writeBinaryBlob("data/BinaryMusic.vvv");
 #endif
 
-	binaryBlob musicReadBlob;
-	if (!musicReadBlob.unPackBinary("mmmmmm.vvv"))
+	// Add MMMMMM first, then the original music
+	mmmmmm = addMusicCollection("mmmmmm.vvv", musicTracks);
+	bool vvvvvvmusic = addMusicCollection("vvvvvvmusic.vvv", musicTracks);
+
+	usingmmmmmm = mmmmmm;
+
+	if (!mmmmmm && !vvvvvvmusic)
 	{
-		mmmmmm = false;
-		usingmmmmmm=false;
-		bool ohCrap = musicReadBlob.unPackBinary("vvvvvvmusic.vvv");
-		SDL_assert(ohCrap && "Music not found!");
+		SDL_assert("Music not found!");
 	}
-	else
-	{
-		mmmmmm = true;
-		usingmmmmmm = true;
-		int index = musicReadBlob.getIndex("data/music/0levelcomplete.ogg");
-		SDL_RWops *rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/1pushingonwards.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/2positiveforce.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/3potentialforanything.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/4passionforexploring.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/5intermission.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/6presentingvvvvvv.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/7gamecomplete.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/8predestinedfate.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/9positiveforcereversed.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/10popularpotpourri.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/11pipedream.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/12pressurecooker.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/13pacedenergy.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/14piercingthesky.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		index = musicReadBlob.getIndex("data/music/predestinedfatefinallevel.ogg");
-		rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-		musicTracks.push_back(MusicTrack( rw ));
-
-		bool ohCrap = musicReadBlob.unPackBinary("vvvvvvmusic.vvv");
-		SDL_assert(ohCrap && "Music not found!");
-	}
-
-	int index = musicReadBlob.getIndex("data/music/0levelcomplete.ogg");
-	SDL_RWops *rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/1pushingonwards.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/2positiveforce.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/3potentialforanything.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/4passionforexploring.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/5intermission.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/6presentingvvvvvv.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/7gamecomplete.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/8predestinedfate.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/9positiveforcereversed.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/10popularpotpourri.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/11pipedream.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/12pressurecooker.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/13pacedenergy.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/14piercingthesky.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
-
-	index = musicReadBlob.getIndex("data/music/predestinedfatefinallevel.ogg");
-	rw = SDL_RWFromMem(musicReadBlob.getAddress(index), musicReadBlob.getSize(index));
-	musicTracks.push_back(MusicTrack( rw ));
 
 	safeToProcessMusic= false;
 	m_doFadeInVol = false;
