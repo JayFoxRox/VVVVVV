@@ -35,9 +35,13 @@
 #define __PHYSFS_COMPILE_TIME_ASSERT(name, x) \
        typedef int __PHYSFS_compile_time_assert_##name[(x) * 2 - 1]
 
+#if defined(XBOX)
+#define alloca(a) __builtin_alloca(a)
+#else
 /* !!! FIXME: remove this when revamping stack allocation code... */
 #if defined(_MSC_VER) || defined(__MINGW32__) || defined(__WATCOMC__)
 #include <malloc.h>
+#endif
 #endif
 
 #ifdef PHYSFS_PLATFORM_SOLARIS
