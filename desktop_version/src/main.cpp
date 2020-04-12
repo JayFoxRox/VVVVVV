@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     char* baseDir = NULL;
     char* assetsPath = NULL;
 
-#if defined(NXDK)
+#ifdef XBOX
     char* args[] = {"D:\\VVVVVV"};
     argv = args;
     argc = 1;
