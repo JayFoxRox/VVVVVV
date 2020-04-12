@@ -152,6 +152,7 @@ char *FILESYSTEM_getUserLevelDirectory()
 void FILESYSTEM_loadFileToMemory(const char *name, unsigned char **mem,
                                  size_t *len, bool addnull)
 {
+#ifndef XBOX
 	if (strcmp(name, "levels/special/stdin.vvvvvv") == 0) {
 		// this isn't *technically* necessary when piping directly from a file, but checking for that is annoying
 		static std::vector<char> STDIN_BUFFER;
@@ -173,6 +174,7 @@ void FILESYSTEM_loadFileToMemory(const char *name, unsigned char **mem,
 		std::copy(STDIN_BUFFER.begin(), STDIN_BUFFER.end(), reinterpret_cast<char*>(*mem));
 		return;
 	}
+#endif
 
 	PHYSFS_File *handle = PHYSFS_openRead(name);
 	if (handle == NULL)
