@@ -986,6 +986,28 @@ void titleinput()
                     {
                         //next page
                         music.playef(11);
+#ifndef XBOX
+                        game.createmenu("credits2");
+#else
+                        game.createmenu("credits2X");
+#endif
+                        map.nexttowercolour();
+                    }
+                    else
+                    {
+                        //back
+                        music.playef(11);
+                        game.createmenu("mainmenu");
+                        map.nexttowercolour();
+                    }
+                }
+#ifdef XBOX
+                else if (game.currentmenuname == "credits2X")
+                {
+                    if (game.currentmenuoption == 0)
+                    {
+                        //next page
+                        music.playef(11);
                         game.createmenu("credits25");
                         map.nexttowercolour();
                     }
@@ -997,6 +1019,7 @@ void titleinput()
                         map.nexttowercolour();
                     }
                 }
+#endif
                 else if (game.currentmenuname == "credits25")
                 {
                     if (game.currentmenuoption == 0)

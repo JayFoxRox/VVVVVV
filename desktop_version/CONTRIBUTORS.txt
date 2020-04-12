@@ -24,4 +24,5 @@ Contributors
 * Emmanuel Vadot (@evadot)
 * Rémi Verschelde (@akien-mga)
 * viri (viri.me)
+* Jannik Vogel (@JayFoxRox)
 * Wouter (Xesxen)
