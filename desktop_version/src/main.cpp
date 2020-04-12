@@ -29,6 +29,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <hal/debug.h>
+#include <hal/video.h>
+#include <windows.h>
+
 scriptclass script;
 
 #if !defined(NO_CUSTOM_LEVELS)
@@ -57,9 +61,24 @@ std::string playtestname;
 
 int main(int argc, char *argv[])
 {
+
     char* baseDir = NULL;
     char* assetsPath = NULL;
 
+#if defined(NXDK)
+    char* args[] = {"D:\\VVVVVV"};
+    argv = args;
+    argc = 1;
+
+    XVideoSetMode(640, 480, 32, REFRESH_DEFAULT);
+
+    SDL_Init(
+        SDL_INIT_VIDEO |
+        SDL_INIT_AUDIO |
+        SDL_INIT_JOYSTICK |
+        SDL_INIT_GAMECONTROLLER
+    );
+#else
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "-renderer") == 0) {
             ++i;
@@ -106,6 +125,7 @@ int main(int argc, char *argv[])
             SDL_SetHintWithPriority(SDL_HINT_RENDER_DRIVER, argv[2], SDL_HINT_OVERRIDE);
         }
     }
+#endif
 
     if(!FILESYSTEM_init(argv[0], baseDir, assetsPath))
     {
