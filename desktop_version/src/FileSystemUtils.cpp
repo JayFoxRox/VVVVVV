@@ -18,6 +18,7 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#if !defined(XBOX)
 #include <shlobj.h>
 int mkdir(char* path, int mode)
 {
@@ -25,6 +26,9 @@ int mkdir(char* path, int mode)
 	MultiByteToWideChar(CP_UTF8, 0, path, -1, utf16_path, MAX_PATH);
 	return CreateDirectoryW(utf16_path, NULL);
 }
+#else
+#define mkdir(a, b) CreateDirectory(a, NULL)
+#endif
 #define VNEEDS_MIGRATION (mkdirResult != 0)
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__HAIKU__)
 #include <sys/stat.h>
@@ -148,6 +152,7 @@ char *FILESYSTEM_getUserLevelDirectory()
 void FILESYSTEM_loadFileToMemory(const char *name, unsigned char **mem,
                                  size_t *len, bool addnull)
 {
+#ifndef XBOX
 	if (strcmp(name, "levels/special/stdin.vvvvvv") == 0) {
 		// this isn't *technically* necessary when piping directly from a file, but checking for that is annoying
 		static std::vector<char> STDIN_BUFFER;
@@ -169,6 +174,7 @@ void FILESYSTEM_loadFileToMemory(const char *name, unsigned char **mem,
 		std::copy(STDIN_BUFFER.begin(), STDIN_BUFFER.end(), reinterpret_cast<char*>(*mem));
 		return;
 	}
+#endif
 
 	PHYSFS_File *handle = PHYSFS_openRead(name);
 	if (handle == NULL)
@@ -254,11 +260,17 @@ std::vector<std::string> FILESYSTEM_getLevelDirFileNames()
 void PLATFORM_getOSDirectory(char* output)
 {
 #ifdef _WIN32
+#if !defined(XBOX)
 	/* This block is here for compatibility, do not touch it! */
 	WCHAR utf16_path[MAX_PATH];
 	SHGetFolderPathW(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, utf16_path);
 	WideCharToMultiByte(CP_UTF8, 0, utf16_path, -1, output, MAX_PATH, NULL, NULL);
 	strcat(output, "\\VVVVVV\\");
+#else
+	//FIXME: strcpy(output, "T:\\UDATA"); ?
+	strcpy(output, "D:");
+	strcat(output, "\\VVVVVV\\");
+#endif
 #else
 	strcpy(output, PHYSFS_getPrefDir("distractionware", "VVVVVV"));
 #endif

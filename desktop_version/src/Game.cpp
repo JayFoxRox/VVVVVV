@@ -21,7 +21,11 @@
 
 // lol, Win32 -flibit
 #ifdef _WIN32
+#ifndef XBOX
 #define strcasecmp stricmp
+#else
+#define strcasecmp strcmp //FIXME: !!!
+#endif
 #endif
 
 //TODO: Non Urgent code cleanup
@@ -183,7 +187,7 @@ void Game::init(void)
     slowdown = 30;
     gameframerate=34;
 
-    fullscreen = false;// true; //Assumed true at first unless overwritten at some point!
+    fullscreen = false; //true; //Assumed true at first unless overwritten at some point!
     stretchMode = 0;
     useLinearFilter = false;
     advanced_mode = false;
@@ -7017,6 +7021,18 @@ void Game::createmenu( std::string t )
         menuxoff = 20;
         menuyoff = 64;
     }
+#ifdef XBOX
+    else if (t == "credits2X")
+    {
+        menuoptions[0] = "next page";
+        menuoptionsactive[0] = true;
+        menuoptions[1] = "return";
+        menuoptionsactive[1] = true;
+        nummenuoptions = 2;
+        menuxoff = 20;
+        menuyoff = 64;
+    }
+#endif
     else if (t == "credits25")
     {
         menuoptions[0] = "next page";

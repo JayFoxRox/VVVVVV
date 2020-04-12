@@ -1,0 +1,104 @@
+XBE_TITLE = VVVVVV
+GEN_XISO = $(XBE_TITLE).iso
+
+CXXFLAGS=-I$(CURDIR)/src \
+         -I$(CURDIR)/../third_party/tinyxml \
+         -I$(CURDIR)/../third_party/physfs \
+         -I$(CURDIR)/../third_party/lodepng \
+         -I$(CURDIR)/../third_party/utfcpp/source \
+         -DBLOBCACHE=1 \
+         -Wall
+
+CFLAGS=-DPHYSFS_NO_CDROM_SUPPORT=1 \
+       -DPHYSFS_SUPPORTS_ZIP=0 \
+       -DPHYSFS_SUPPORTS_7Z=0 \
+       -DPHYSFS_SUPPORTS_GRP=0 \
+       -DPHYSFS_SUPPORTS_HOG=0 \
+       -DPHYSFS_SUPPORTS_MVL=0 \
+       -DPHYSFS_SUPPORTS_WAD=0 \
+       -DPHYSFS_SUPPORTS_QPAK=0 \
+       -DPHYSFS_SUPPORTS_SLB=0 \
+       -DPHYSFS_SUPPORTS_ISO9660=0 \
+       -DPHYSFS_SUPPORTS_VDF=0 \
+       -Wall
+
+# Source Lists
+VVV_SRC=\
+	src/BinaryBlob.cpp \
+	src/BlockV.cpp \
+	src/editor.cpp \
+	src/Ent.cpp \
+	src/Entity.cpp \
+	src/FileSystemUtils.cpp \
+	src/Finalclass.cpp \
+	src/Game.cpp \
+	src/Graphics.cpp \
+	src/GraphicsResources.cpp \
+	src/GraphicsUtil.cpp \
+	src/Input.cpp \
+	src/KeyPoll.cpp \
+	src/Labclass.cpp \
+	src/Logic.cpp \
+	src/Map.cpp \
+	src/Music.cpp \
+	src/Otherlevel.cpp \
+	src/preloader.cpp \
+	src/Render.cpp \
+	src/Screen.cpp \
+	src/Script.cpp \
+	src/Scripts.cpp \
+	src/SoundSystem.cpp \
+	src/Spacestation2.cpp \
+	src/TerminalScripts.cpp \
+	src/Textbox.cpp \
+	src/Tower.cpp \
+	src/UtilityClass.cpp \
+	src/WarpClass.cpp \
+	src/main.cpp \
+	src/Network.c \
+	src/SteamNetwork.c \
+	src/GOGNetwork.c
+
+XML_SRC=\
+	../third_party/tinyxml/tinystr.cpp \
+	../third_party/tinyxml/tinyxml.cpp \
+	../third_party/tinyxml/tinyxmlerror.cpp \
+	../third_party/tinyxml/tinyxmlparser.cpp
+
+PFS_SRC=\
+	../third_party/physfs/physfs.c \
+	../third_party/physfs/physfs_archiver_dir.c \
+	../third_party/physfs/physfs_archiver_unpacked.c \
+	../third_party/physfs/physfs_archiver_zip.c \
+	../third_party/physfs/physfs_byteorder.c \
+	../third_party/physfs/physfs_unicode.c \
+	../third_party/physfs/physfs_platform_posix.c \
+	../third_party/physfs/physfs_platform_unix.c \
+	../third_party/physfs/physfs_platform_windows.c
+
+PNG_SRC=../third_party/lodepng/lodepng.c
+
+SRCS += $(VVV_SRC) $(XML_SRC) $(PFS_SRC) $(PNG_SRC)
+SRCS := $(addprefix $(CURDIR)/, $(SRCS))
+
+NXDK_SDL = y
+NXDK_CXX = y
+
+NXDK_STACKSIZE = 131072
+
+all_local: all
+
+include $(NXDK_DIR)/Makefile
+
+download_data: $(OUTPUT_DIR)/data.zip
+
+# You need data.zip from https://thelettervsixtim.es/makeandplay/
+$(OUTPUT_DIR)/data.zip:
+	@mkdir -p $(OUTPUT_DIR)
+	wget -N https://thelettervsixtim.es/makeandplay/data.zip -O $(OUTPUT_DIR)/data.zip
+
+install_data: $(OUTPUT_DIR)/data.zip
+	@mkdir -p $(OUTPUT_DIR)/VVVVVV
+	unzip -o $(OUTPUT_DIR)/data.zip -d $(OUTPUT_DIR)/VVVVVV; true
+	rm -f $(OUTPUT_DIR)/VVVVVV/vvvvvvmusic.vvv
+	rm -f $(OUTPUT_DIR)/data.zip

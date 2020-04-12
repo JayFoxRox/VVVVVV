@@ -39,7 +39,11 @@ void titlerender()
 #endif
 
         graphics.Print(5, 175, "[ Press ACTION to Start ]", tr, tg, tb, true);
+#ifndef XBOX
         graphics.Print(5, 195, "ACTION = Space, Z, or V", int(tr*0.5f), int(tg*0.5f), int(tb*0.5f), true);
+#else
+        graphics.Print(5, 195, "ACTION = FIXME titlerender.cpp:56", int(tr*0.5f), int(tg*0.5f), int(tb*0.5f), true);
+#endif
     }
     else
     {
@@ -247,6 +251,17 @@ void titlerender()
             graphics.bigprint( 40, 125, "Simon Roth", tr, tg, tb, true);
             graphics.bigprint( 40, 145, "Ethan Lee", tr, tg, tb, true);
         }
+#ifdef XBOX
+        else if (game.currentmenuname == "credits2X")
+        {
+            graphics.Print( -1, 40+10, "Original Xbox version by", tr, tg, tb, true);
+            graphics.bigprint( 40, 55+10, "Jannik Vogel", tr, tg, tb, true);
+            //graphics.Print( 40, 75+10, "http://www.jannikvogel.de", tr, tg, tb, true);
+            graphics.Print( -1, 130-10, "Original Xbox tools by", tr, tg, tb, true);
+            graphics.bigprint( 40, 145-10, "XboxDev Community", tr, tg, tb, true);
+            //graphics.Print( 40, 165-10, "http://www.xboxdev.org", tr, tg, tb, true);
+        }
+#endif
         else if (game.currentmenuname == "credits25")
         {
             graphics.Print( -1, 40, "Beta Testing by", tr, tg, tb, true);

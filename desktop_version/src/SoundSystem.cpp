@@ -2,6 +2,8 @@
 #include "SoundSystem.h"
 #include "FileSystemUtils.h"
 
+#include <hal/debug.h>
+
 MusicTrack::MusicTrack(const char* fileName)
 {
 	m_music = Mix_LoadMUS(fileName);
@@ -32,7 +34,9 @@ SoundTrack::SoundTrack(const char* fileName)
 	size_t length = 0;
 	FILESYSTEM_loadFileToMemory(fileName, &mem, &length);
 	SDL_RWops *fileIn = SDL_RWFromMem(mem, length);
+debugPrint("Loading sound %p %p\n", fileIn, mem);
 	sound = Mix_LoadWAV_RW(fileIn, 1);
+debugPrint("Loaded sound %p\n", sound);
 	if (length)
 	{
 		FILESYSTEM_freeMemory(&mem);
@@ -44,18 +48,52 @@ SoundTrack::SoundTrack(const char* fileName)
 	}
 }
 
+#include <xboxkrnl/xboxkrnl.h>
+
+
+extern "C" {
+    extern int nextCol;
+    extern int nextRow;
+}
+
+#include <windows.h>
 SoundSystem::SoundSystem()
 {
 	int audio_rate = 44100;
 	Uint16 audio_format = AUDIO_S16SYS;
 	int audio_channels = 2;
 	int audio_buffers = 1024;
-
+debugPrint("meh?\n");
+Sleep(1000);
+#if 1
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) != 0)
 	{
+debugPrint("meh!\n");
+Sleep(1000);
 		fprintf(stderr, "Unable to initialize audio: %s\n", Mix_GetError());
 		SDL_assert(0 && "Unable to initialize audio!");
 	}
+debugPrint("Okay!\n");
+
+nextCol = 25;
+nextRow = 300;
+
+  debugPrint("           Memory statistics:\n");
+  MM_STATISTICS ms;
+  ms.Length = sizeof(MM_STATISTICS);
+  MmQueryStatistics(&ms);
+	#define PRINT(stat) debugPrint("           - " #stat ": %d\n", ms.stat);
+  PRINT(TotalPhysicalPages)
+  PRINT(AvailablePages)
+  PRINT(VirtualMemoryBytesCommitted)
+  PRINT(VirtualMemoryBytesReserved)
+  PRINT(CachePagesCommitted)
+  PRINT(PoolPagesCommitted)
+  PRINT(StackPagesCommitted)
+  PRINT(ImagePagesCommitted)
+  #undef PRINT
+
+#endif
 }
 
 void SoundSystem::playMusic(MusicTrack* music)
