@@ -68,6 +68,22 @@ int savemusic = 0;
 
 std::string playtestname;
 
+static __attribute__((constructor)) void setup_xbox() {
+  XVideoSetMode(640, 480, 16, REFRESH_DEFAULT);
+
+#if 1
+  // We consume a lot of memory, so we need to claim the framebuffer
+  size_t fb_size = 640 * 480 * 2;
+  _fb = (uint8_t*)MmAllocateContiguousMemoryEx(fb_size, 0, 0xFFFFFFFF, 0x1000, PAGE_READWRITE | PAGE_WRITECOMBINE);
+  memset(_fb, 0x00, fb_size);
+#define _PCRTC_START				0xFD600800
+  *(unsigned int*)(_PCRTC_START) = (unsigned int)_fb & 0x03FFFFFF;
+  debugPrint("FB: 0x%X\n", _fb);
+#endif
+
+  SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
+}
+
 int main(int argc, char *argv[])
 {
 
@@ -78,20 +94,6 @@ int main(int argc, char *argv[])
     char* args[] = {"D:\\VVVVVV"};
     argv = args;
     argc = 1;
-
-    XVideoSetMode(640, 480, 16, REFRESH_DEFAULT);
-
-#if 1
-    // We consume a lot of memory, so we need to claim the framebuffer
-    size_t fb_size = 640 * 480 * 2;
-    _fb = (uint8_t*)MmAllocateContiguousMemoryEx(fb_size, 0, 0xFFFFFFFF, 0x1000, PAGE_READWRITE | PAGE_WRITECOMBINE);
-    memset(_fb, 0x00, fb_size);
-#define _PCRTC_START				0xFD600800
-    *(unsigned int*)(_PCRTC_START) = (unsigned int)_fb & 0x03FFFFFF;
-    debugPrint("FB: 0x%X\n", _fb);
-#endif
-
-    SDL_SetHint(SDL_HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS, "1");
 
     SDL_Init(
         SDL_INIT_VIDEO |

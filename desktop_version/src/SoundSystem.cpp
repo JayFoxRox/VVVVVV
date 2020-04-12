@@ -56,15 +56,20 @@ extern "C" {
     extern int nextRow;
 }
 
+#include <windows.h>
 SoundSystem::SoundSystem()
 {
 	int audio_rate = 44100;
 	Uint16 audio_format = AUDIO_S16SYS;
 	int audio_channels = 2;
 	int audio_buffers = 1024;
-#if 0
+debugPrint("meh?\n");
+Sleep(1000);
+#if 1
 	if (Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers) != 0)
 	{
+debugPrint("meh!\n");
+Sleep(1000);
 		fprintf(stderr, "Unable to initialize audio: %s\n", Mix_GetError());
 		SDL_assert(0 && "Unable to initialize audio!");
 	}
